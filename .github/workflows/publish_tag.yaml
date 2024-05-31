@@ -1,15 +1,18 @@
-name: Update tag
-run-name: Update tag ${{ github.event.inputs.tag_target }}
+name: Publish TAG
+run-name: Publish TAG ${{ github.event.inputs.tag_target }}
 
 on:
   workflow_dispatch:
     inputs:
       tag_target:
         type: choice
-        description: El tag a actualizar
+        description: El TAG a generar o actualizar
         options:
           - v1
           - v2
+          - v3
+          - v4
+          - v5
 
 jobs:
   tag:
@@ -20,7 +23,9 @@ jobs:
       run: |
         git config user.name 'github-actions[bot]'
         git config user.email 'github-actions[bot]@users.noreply.github.com'
-    - name: Update tag
-      run: git tag -fa -m "Actualizando TAG ${{ github.event.inputs.tag_target }}" ${{ github.event.inputs.tag_target }}
-    - name: Push new tag
+
+    - name: Create or update TAG
+      run: git tag -fa -m "TAG ${{ github.event.inputs.tag_target }}" ${{ github.event.inputs.tag_target }}
+
+    - name: Push TAG
       run: git push origin ${{ github.event.inputs.tag_target }} --force
