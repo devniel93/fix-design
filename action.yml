@@ -9,6 +9,7 @@ runs:
       uses: actions/checkout@v4
 
     - name: Validar ultimo mensaje commit
+      shell: bash
       id: validate_last_msg_commit
       run: |
         last_msg_commit=`git log --format=%B -n 1 HEAD | head -n 1`
