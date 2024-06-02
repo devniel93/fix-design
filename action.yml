@@ -9,6 +9,13 @@ runs:
       shell: bash
       run: |
         echo `LAST_MSG_COMMIT="execute fix-design"` >> "${GITHUB_OUTPUT}"
+        echo `LIBRARY_INSTALL_URL="https://raw.githubusercontent.com/devniel93/my-openapi-changes/main/install.sh"` >> "${GITHUB_OUTPUT}"
+        echo `MSG_RESULT_PREFIX="No changes"` >> "${GITHUB_OUTPUT}"
+        echo `OPENAPI_CHANGES_PROPERTIES="path,title,servers,x-bcp-api-id,x-bcp-api-type"` >> "${GITHUB_OUTPUT}"
+        echo `RELEASE_API_TYPES="channel"` >> "${GITHUB_OUTPUT}"
+        echo `SNAPSHOT_API_TYPES="channel,business,core,dt"` >> "${GITHUB_OUTPUT}"
+        echo `TAG_REGEX="^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(SNAPSHOT))?$"` >> "${GITHUB_OUTPUT}"
+        echo `VALID_API_TYPES="channel,business,core,dt"` >> "${GITHUB_OUTPUT}"
       
     - name: Descargar repositorio git
       id: checkout_repository
@@ -26,3 +33,185 @@ runs:
           result="FALSE"
         fi
         echo "is_valid=$result" >> $GITHUB_OUTPUT
+
+    - name: Obtener nombre de repo
+      shell: bash
+      id: get_repo_name
+      if: ${{ steps.validate_last_msg_commit.outputs.is_valid == 'TRUE' }}
+      run: |
+        gitRepoName=`git ls-remote --get-url | xargs basename -s .git`
+        echo $gitRepoName
+        echo "GIT_REPO_NAME=$gitRepoName" >> $GITHUB_OUTPUT
+
+    - name: Obtener tipo de API
+      shell: bash
+      id: get_api_type
+      if: ${{ steps.get_repo_name.outputs.GIT_REPO_NAME != '' }}
+      run: |
+        gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
+        apiType=$(echo $gitRepoName | cut -d'-' -f1)
+        echo $apiType
+        echo "api_type=$apiType" >> $GITHUB_OUTPUT
+
+    - name: Validar tipo de API
+      shell: bash
+      id: validate_api_type
+      if: ${{ steps.get_api_type.outputs.api_type != '' }}
+      run: |
+        apiType=${{ steps.get_api_type.outputs.api_type }}
+        
+        IFS=',' read -r -a api_types <<< ${{ steps.variables.outputs.VALID_API_TYPES }}
+        for type in "${api_types[@]}"; do
+          if [[ $apiType == "$type" ]]; then
+            result="TRUE"
+            break
+          fi
+        done
+        echo $result
+        echo "is_valid=$result" >> $GITHUB_OUTPUT
+    
+    - name: Obtener ultimo tag
+      uses: actions-ecosystem/action-get-latest-tag@v1
+      id: get_latest_tag
+      if: ${{ steps.validate_api_type.outputs.is_valid == 'TRUE' }}
+      with:
+        with_initial_version: false
+
+    - name: Validar tag
+      uses: actions-ecosystem/action-regex-match@v2
+      id: regex_match
+      if: ${{ steps.get_latest_tag.outputs.tag != '' }}
+      with:
+        text: ${{ steps.get_latest_tag.outputs.tag }}
+        regex: '${{ steps.variables.outputs.TAG_REGEX }}'
+
+    - name: Instalar lib my-openapi-changes
+      shell: bash
+      id: install_openapi_changes
+      if: ${{ steps.regex_match.outputs.match != '' }}
+      run: |
+        curl -fsSL '${{ steps.variables.outputs.LIBRARY_INSTALL_URL }}' | sh
+
+    - name: Validar si es FIX
+      shell: bash
+      id: validate_is_fix
+      if: ${{ steps.install_openapi_changes.outcome == 'success' }}
+      run: |
+        gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
+        jsonReport=`openapi-changes report --no-color api/$gitRepoName.yaml https://raw.githubusercontent.com/devniel93/$gitRepoName/main/api/$gitRepoName.yaml`
+        echo $jsonReport
+        
+        validJson=`echo $jsonReport | jq -r '.message'`
+        if [[ $validJson == '${{ steps.variables.outputs.MSG_RESULT_PREFIX }}'* ]]; then
+          echo "No existen cambios"
+        else
+          echo "Existen cambios..."
+          IFS=',' read -r -a changes_properties <<< ${{ steps.variables.outputs.OPENAPI_CHANGES_PROPERTIES }}
+          for change in "${changes_properties[@]}"; do
+            echo "2.1 validando si hay cambios en $change"
+            validFix=`echo $jsonReport | jq -r '.changes[] | select(.property=="'$change'")'`
+            echo $validFix
+            if [[ -z "${validFix// /}" ]] || [[ $validFix == 'null' ]] ; then
+              echo "No hay cambios en $change"
+              result="TRUE"
+            else
+              echo "Hay cambios en $change"
+              result="FALSE"
+              break
+            fi
+          done
+          echo "is_fix=$result" >> $GITHUB_OUTPUT
+          echo "is_fix: $result"
+        fi
+    - name: Obtener solo la version del TAG
+      id: get_only_version
+      if: ${{ steps.validate_is_fix.outputs.is_fix == 'TRUE' }}
+      run: |
+        latest_tag=${{ steps.get_latest_tag.outputs.tag }}
+        only_version=$(echo $latest_tag | cut -d'-' -f1)
+        echo "only_version: $only_version"
+        echo "only_version=$only_version" >> $GITHUB_OUTPUT
+    
+    - name: Generar nueva version
+      uses: actions-ecosystem/action-bump-semver@v1
+      id: get_new_version
+      if: ${{ steps.get_only_version.outputs.only_version != null }}
+      with:
+        current_version: ${{ steps.get_only_version.outputs.only_version }}
+        level: 'patch'
+
+    - name: Actualizar version en OpenAPI
+      shell: bash
+      id: update_version
+      if: ${{ steps.get_new_version.outputs.new_version != null }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
+        versionInOpenAPI=`yq '.info.version' api/$gitRepoName.yaml`
+        echo $versionInOpenAPI
+        newVersion=$(echo ${{ steps.get_new_version.outputs.new_version }} | sed -e 's/^v//' -e 's/-.*//')
+        echo $newVersion
+        if [[ $versionInOpenAPI != "$newVersion" ]]; then
+          yq eval ".info.version = \"$newVersion\"" -i api/$gitRepoName.yaml
+          
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add api/$gitRepoName.yaml
+          git commit -m "Actualizando version en OpenAPI"
+          git push origin HEAD:${{ github.ref }}
+        fi
+    - name: Generar PR y merge
+      shell: bash
+      id: generate_pr
+      if: ${{ steps.validate_is_fix.outputs.is_fix == 'TRUE' }}
+      run: |
+        gh pr create --title 'Merge testing' --body 'Created by Github action'
+        gh pr merge --merge --auto
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generar nombres para los TAGs
+      shell: bash
+      id: get_tag_name
+      if: ${{ steps.get_new_version.outputs.new_version != null }}
+      run: |
+        apiType=${{ steps.get_api_type.outputs.api_type }}
+        
+        IFS=',' read -r -a snap_api_types <<< ${{ steps.variables.outputs.SNAPSHOT_API_TYPES }}
+        for type in "${snap_api_types[@]}"; do
+          if [[ $apiType == "$type" ]]; then
+            echo "es snapshot"
+            tagNameSnapshot="${{ steps.get_new_version.outputs.new_version }}-SNAPSHOT"
+            echo "tag_name_snapshot=$tagNameSnapshot" >> $GITHUB_OUTPUT  
+            break
+          fi
+        done
+        IFS=',' read -r -a rel_api_types <<< ${{ steps.variables.outputs.RELEASE_API_TYPES }}
+        for rel_type in "${rel_api_types[@]}"; do
+          if [[ $apiType == "$rel_type" ]]; then
+            echo "es release"
+            tagNameRelease="${{ steps.get_new_version.outputs.new_version }}"
+            echo "tag_name_release=$tagNameRelease" >> $GITHUB_OUTPUT  
+            break
+          fi
+        done
+        
+        echo "tagNameSnapshot: $tagNameSnapshot"
+        echo "tagNameRelease: $tagNameRelease"
+    
+    - name: Generar TAG SNAPSHOT
+      uses: actions-ecosystem/action-push-tag@v1
+      id: generate_tag_snapshot
+      if: ${{ steps.get_tag_name.outputs.tag_name_snapshot != null }}
+      with:
+        tag: ${{ steps.get_tag_name.outputs.tag_name_snapshot }}
+        message: "${{ steps.get_tag_name.outputs.tag_name_snapshot }} : PR"
+
+    - name: Generar TAG RELEASE
+      uses: actions-ecosystem/action-push-tag@v1
+      id: generate_tag_release
+      if: ${{ steps.get_tag_name.outputs.tag_name_release != null }}
+      with:
+        tag: ${{ steps.get_tag_name.outputs.tag_name_release }}
+        message: "${{ steps.get_tag_name.outputs.tag_name_release }} : PR"
