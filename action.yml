@@ -30,11 +30,14 @@ runs:
       shell: bash
       id: validate_last_msg_commit
       run: |
+        echo "in validate_last_msg_commit..."
         last_msg_commit=`git log --format=%B -n 1 HEAD | head -n 1`
         echo $last_msg_commit
         if [[ $last_msg_commit == '${{ steps.variables.outputs.LAST_MSG_COMMIT }}' ]]; then
+          echo "es true..."
           result="TRUE"
         else
+          echo "es false..."
           result="FALSE"
         fi
         echo "is_valid=$result" >> $GITHUB_OUTPUT
@@ -44,6 +47,7 @@ runs:
       id: get_repo_name
       if: ${{ steps.validate_last_msg_commit.outputs.is_valid == 'TRUE' }}
       run: |
+        echo "in get_repo_name..."
         gitRepoName=`git ls-remote --get-url | xargs basename -s .git`
         echo $gitRepoName
         echo "GIT_REPO_NAME=$gitRepoName" >> $GITHUB_OUTPUT
@@ -53,6 +57,7 @@ runs:
       id: get_api_type
       if: ${{ steps.get_repo_name.outputs.GIT_REPO_NAME != '' }}
       run: |
+        echo "in get_api_type..."
         gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
         apiType=$(echo $gitRepoName | cut -d'-' -f1)
         echo $apiType
