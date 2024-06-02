@@ -13,7 +13,7 @@ runs:
       id: variables
       shell: bash
       run: |
-        echo `LAST_MSG_COMMIT="execute fix-design"` >> "${GITHUB_OUTPUT}"
+        echo `LAST_MSG_COMMIT='execute fix-design'` >> "${GITHUB_OUTPUT}"
         echo `LIBRARY_INSTALL_URL="https://raw.githubusercontent.com/devniel93/my-openapi-changes/main/install.sh"` >> "${GITHUB_OUTPUT}"
         echo `MSG_RESULT_PREFIX="No changes"` >> "${GITHUB_OUTPUT}"
         echo `OPENAPI_CHANGES_PROPERTIES="path,title,servers,x-bcp-api-id,x-bcp-api-type"` >> "${GITHUB_OUTPUT}"
