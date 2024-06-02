@@ -17,7 +17,7 @@ jobs:
         git config user.email 'github-actions[bot]@users.noreply.github.com'
 
     - name: Create or update TAG
-      run: git tag -fa -m "TAG v1 v1
+      run: git tag -fa -m "TAG v1" v1
 
     - name: Push TAG
       run: git push origin v1 --force
