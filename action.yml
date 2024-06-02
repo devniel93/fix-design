@@ -124,6 +124,7 @@ runs:
           echo "is_fix: $result"
         fi
     - name: Obtener solo la version del TAG
+      shell: bash
       id: get_only_version
       if: ${{ steps.validate_is_fix.outputs.is_fix == 'TRUE' }}
       run: |
