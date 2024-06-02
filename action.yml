@@ -111,10 +111,12 @@ runs:
       run: |
         echo "in validate_is_fix..."
         gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
+        echo "[validate_is_fix] gitRepoName: $gitRepoName"
         jsonReport=`openapi-changes report --no-color api/$gitRepoName.yaml https://raw.githubusercontent.com/devniel93/$gitRepoName/main/api/$gitRepoName.yaml`
-        echo $jsonReport
+        echo "[validate_is_fix] jsonReport: $jsonReport"
         
         validJson=`echo $jsonReport | jq -r '.message'`
+        echo "[validate_is_fix] validJson: $validJson"
         if [[ $validJson == '${{ steps.variables.outputs.MSG_RESULT_PREFIX }}'* ]]; then
           echo "No existen cambios"
         else
