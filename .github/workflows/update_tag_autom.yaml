@@ -1,0 +1,23 @@
+name: Update TAG automatically
+run-name: Publish TAG ${{ github.event.inputs.tag_target }}
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Git config
+      run: |
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+    - name: Create or update TAG
+      run: git tag -fa -m "TAG ${{ github.event.inputs.tag_target }}" ${{ github.event.inputs.tag_target }}
+
+    - name: Push TAG
+      run: git push origin ${{ github.event.inputs.tag_target }} --force
