@@ -13,14 +13,14 @@ runs:
       id: variables
       shell: bash
       run: |
-        echo "LAST_MSG_COMMIT='execute fix-design'" >> ${GITHUB_OUTPUT}
-        echo `LIBRARY_INSTALL_URL="https://raw.githubusercontent.com/devniel93/my-openapi-changes/main/install.sh"` >> "${GITHUB_OUTPUT}"
-        echo `MSG_RESULT_PREFIX="No changes"` >> "${GITHUB_OUTPUT}"
-        echo `OPENAPI_CHANGES_PROPERTIES="path,title,servers,x-bcp-api-id,x-bcp-api-type"` >> "${GITHUB_OUTPUT}"
-        echo `RELEASE_API_TYPES="channel"` >> "${GITHUB_OUTPUT}"
-        echo `SNAPSHOT_API_TYPES="channel,business,core,dt"` >> "${GITHUB_OUTPUT}"
-        echo `TAG_REGEX="^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(SNAPSHOT))?$"` >> "${GITHUB_OUTPUT}"
-        echo `VALID_API_TYPES="channel,business,core,dt"` >> "${GITHUB_OUTPUT}"
+        echo "LAST_MSG_COMMIT=execute fix-design" >> ${GITHUB_OUTPUT}
+        echo "LIBRARY_INSTALL_URL=https://raw.githubusercontent.com/devniel93/my-openapi-changes/main/install.sh" >> ${GITHUB_OUTPUT}
+        echo "MSG_RESULT_PREFIX=No changes" >> ${GITHUB_OUTPUT}
+        echo "OPENAPI_CHANGES_PROPERTIES=path,title,servers,x-bcp-api-id,x-bcp-api-type" >> ${GITHUB_OUTPUT}
+        echo "RELEASE_API_TYPES=channel" >> ${GITHUB_OUTPUT}
+        echo "SNAPSHOT_API_TYPES=channel,business,core,dt" >> ${GITHUB_OUTPUT}
+        echo "TAG_REGEX=^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(SNAPSHOT))?$" >> ${GITHUB_OUTPUT}
+        echo "VALID_API_TYPES=channel,business,core,dt" >> ${GITHUB_OUTPUT}
       
     - name: Descargar repositorio git
       id: checkout_repository
