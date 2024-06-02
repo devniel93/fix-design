@@ -4,6 +4,12 @@ description: |
 runs:
   using: "composite"
   steps:
+    - name: Set variables
+      id: variables
+      shell: bash
+      run: |
+        echo `LAST_MSG_COMMIT="execute fix-design"` >> "${GITHUB_OUTPUT}"
+      
     - name: Descargar repositorio git
       id: checkout_repository
       uses: actions/checkout@v4
@@ -14,7 +20,7 @@ runs:
       run: |
         last_msg_commit=`git log --format=%B -n 1 HEAD | head -n 1`
         echo $last_msg_commit
-        if [[ $last_msg_commit == '${{ vars.LAST_MSG_COMMIT }}' ]]; then
+        if [[ $last_msg_commit == '${{ steps.variables.outputs.LAST_MSG_COMMIT }}' ]]; then
           result="TRUE"
         else
           result="FALSE"
