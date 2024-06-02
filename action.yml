@@ -69,6 +69,7 @@ runs:
       id: validate_api_type
       if: ${{ steps.get_api_type.outputs.api_type != '' }}
       run: |
+        echo "in validate_api_type..."
         apiType=${{ steps.get_api_type.outputs.api_type }}
         
         IFS=',' read -r -a api_types <<< ${{ steps.variables.outputs.VALID_API_TYPES }}
@@ -108,6 +109,7 @@ runs:
       id: validate_is_fix
       if: ${{ steps.install_openapi_changes.outcome == 'success' }}
       run: |
+        echo "in validate_is_fix..."
         gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
         jsonReport=`openapi-changes report --no-color api/$gitRepoName.yaml https://raw.githubusercontent.com/devniel93/$gitRepoName/main/api/$gitRepoName.yaml`
         echo $jsonReport
@@ -134,11 +136,13 @@ runs:
           echo "is_fix=$result" >> $GITHUB_OUTPUT
           echo "is_fix: $result"
         fi
+
     - name: Obtener solo la version del TAG
       shell: bash
       id: get_only_version
       if: ${{ steps.validate_is_fix.outputs.is_fix == 'TRUE' }}
       run: |
+        echo "in get_only_version..."
         latest_tag=${{ steps.get_latest_tag.outputs.tag }}
         only_version=$(echo $latest_tag | cut -d'-' -f1)
         echo "only_version: $only_version"
@@ -159,6 +163,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
+        echo "in update_version..."
         gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
         versionInOpenAPI=`yq '.info.version' api/$gitRepoName.yaml`
         echo $versionInOpenAPI
@@ -178,6 +183,7 @@ runs:
       id: generate_pr
       if: ${{ steps.validate_is_fix.outputs.is_fix == 'TRUE' }}
       run: |
+        echo "in generate_pr..."
         gh pr create --title 'Merge testing' --body 'Created by Github action'
         gh pr merge --merge --auto
       env:
@@ -188,6 +194,7 @@ runs:
       id: get_tag_name
       if: ${{ steps.get_new_version.outputs.new_version != null }}
       run: |
+        echo "in get_tag_name..."
         apiType=${{ steps.get_api_type.outputs.api_type }}
         
         IFS=',' read -r -a snap_api_types <<< ${{ steps.variables.outputs.SNAPSHOT_API_TYPES }}
