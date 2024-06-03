@@ -185,6 +185,7 @@ runs:
           git commit -m "Actualizando version en OpenAPI"
           git push origin HEAD:${{ github.ref }}
         fi
+
     - name: Generar PR y merge
       shell: bash
       id: generate_pr
@@ -241,3 +242,12 @@ runs:
       with:
         tag: ${{ steps.get_tag_name.outputs.tag_name_release }}
         message: "${{ steps.get_tag_name.outputs.tag_name_release }} : PR"
+
+    - name: Generar Github Release
+      shell: bash
+      id: generate_release
+      if: ${{ steps.get_tag_name.outputs.tag_name_release != null }}
+      run: |
+        gh release create --generate-notes --latest
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
