@@ -178,7 +178,7 @@ runs:
           yq eval ".info.version = \"$newVersion\"" -i api/$gitRepoName.yaml
           ls -ld .git
           whoami
-          mount | grep "$(df . | tail -1 | awk '{print $1}')"
+          mount | grep "on / type"
           chmod -R u+rwx .git
           sudo chown -R $(whoami):$(whoami) .git
           git config --global user.name 'github-actions[bot]'
