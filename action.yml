@@ -177,11 +177,12 @@ runs:
         if [[ $versionInOpenAPI != "$newVersion" ]]; then
           yq eval ".info.version = \"$newVersion\"" -i api/$gitRepoName.yaml
           ls -ld .git
+          whoami
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          sudo git add api/$gitRepoName.yaml
-          sudo git commit -m "Actualizando version en OpenAPI"
-          sudo git push origin HEAD:${{ github.ref }}
+          git add api/$gitRepoName.yaml
+          git commit -m "Actualizando version en OpenAPI"
+          git push origin HEAD:${{ github.ref }}
         fi
     - name: Generar PR y merge
       shell: bash
