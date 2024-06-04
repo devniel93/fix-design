@@ -248,6 +248,6 @@ runs:
       id: generate_release
       if: ${{ steps.get_tag_name.outputs.tag_name_release != null }}
       run: |
-        gh release create --generate-notes --latest
+        gh release create ${{ steps.get_tag_name.outputs.tag_name_release }} --generate-notes --latest
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
