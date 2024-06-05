@@ -45,10 +45,35 @@ runs:
         fi
         echo "is_valid=$result" >> $GITHUB_OUTPUT
 
+    - name: Validar rama actualizada 
+      id: validate_branch
+      shell: bash
+      if: ${{ steps.validate_last_msg_commit.outputs.is_valid == 'TRUE' }}
+      run: |  
+        # Nombre de la rama principal
+        MAIN_BRANCH="${{ steps.variables.outputs.BASE_BRANCH }}"
+
+        # Obtener el nombre de la rama actual
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+        # Actualizar la información del repositorio remoto
+        git fetch origin
+
+        # Comprobar si la rama actual está al día con la rama principal
+        if git merge-base --is-ancestor origin/$MAIN_BRANCH $CURRENT_BRANCH; then
+          echo "La rama '$CURRENT_BRANCH' está actualizada con respecto a '$MAIN_BRANCH'."
+          result="TRUE"
+        else
+          echo "La rama '$CURRENT_BRANCH' no está actualizada con respecto a '$MAIN_BRANCH'. Por favor, haz pull de '$MAIN_BRANCH' antes de hacer push."
+          result="TRUE"
+        fi
+        echo $result
+        echo "is_valid=$result" >> $GITHUB_OUTPUT
+
     - name: Obtener nombre de repo
       shell: bash
       id: get_repo_name
-      if: ${{ steps.validate_last_msg_commit.outputs.is_valid == 'TRUE' }}
+      if: ${{ steps.validate_branch.outputs.is_valid == 'TRUE' }}
       run: |
         echo "in get_repo_name..."
         gitRepoName=`git ls-remote --get-url | xargs basename -s .git`
