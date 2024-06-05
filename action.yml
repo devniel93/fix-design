@@ -108,16 +108,16 @@ runs:
       if: ${{ steps.get_latest_tag.outputs.latest_tag != '' }}
       run: |
         # Regex para validar el tag
-        regex=${{ steps.variables.outputs.TAG_REGEX }}
+        regex="${{ steps.variables.outputs.TAG_REGEX }}"
 
         # Tag a validar
         tag="${{ steps.get_latest_tag.outputs.latest_tag }}"
 
-        if [[ $tag =~ $regex ]]; then
-          echo "El tag '$tag' es válido."
+        if echo "$tag" | grep -Eq "$regex"; then
+          echo "El tag $tag es valido con regex"
           result="TRUE"
         else
-          echo "El tag '$tag' no es válido."
+          echo "El tag $tag no es valido con regex"
           result="FALSE"
         fi
         echo $result
