@@ -180,6 +180,15 @@ runs:
         echo "new_version: $new_version"
         echo "new_version=$new_version" >> $GITHUB_OUTPUT
     
+    - name: Configurar GIT
+      shell: bash
+      id: config_git
+      if: ${{ steps.get_new_version.outputs.new_version != null }}
+      run: |
+        sudo chown -R "${USER:-$(id -un)}" .
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
     - name: Actualizar version en OpenAPI
       shell: bash
       id: update_version
@@ -187,7 +196,6 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
-        echo "in update_version..."
         gitRepoName=${{ steps.get_repo_name.outputs.GIT_REPO_NAME }}
         versionInOpenAPI=`yq '.info.version' api/$gitRepoName.yaml`
         echo $versionInOpenAPI
@@ -195,11 +203,6 @@ runs:
         echo $newVersion
         if [[ $versionInOpenAPI != "$newVersion" ]]; then
           yq eval ".info.version = \"$newVersion\"" -i api/$gitRepoName.yaml
-          ls -ld .git
-          whoami
-          sudo chown -R "${USER:-$(id -un)}" .
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add api/$gitRepoName.yaml
           git commit -m "Actualizando version en OpenAPI"
           git push origin HEAD:${{ github.ref }}
@@ -247,20 +250,22 @@ runs:
         echo "tagNameRelease: $tagNameRelease"
     
     - name: Generar TAG SNAPSHOT
-      uses: actions-ecosystem/action-push-tag@v1
       id: generate_tag_snapshot
+      shell: bash
       if: ${{ steps.get_tag_name.outputs.tag_name_snapshot != null }}
-      with:
-        tag: ${{ steps.get_tag_name.outputs.tag_name_snapshot }}
-        message: "${{ steps.get_tag_name.outputs.tag_name_snapshot }} : PR"
+      run: |
+        tag="${{ steps.get_tag_name.outputs.tag_name_snapshot }}"
+        git tag -a "$tag" -m "$tag"
+        git push origin "${tag}"
 
     - name: Generar TAG RELEASE
-      uses: actions-ecosystem/action-push-tag@v1
       id: generate_tag_release
+      shell: bash
       if: ${{ steps.get_tag_name.outputs.tag_name_release != null }}
-      with:
-        tag: ${{ steps.get_tag_name.outputs.tag_name_release }}
-        message: "${{ steps.get_tag_name.outputs.tag_name_release }} : PR"
+      run: |
+        tag="${{ steps.get_tag_name.outputs.tag_name_release }}"
+        git tag -a "$tag" -m "$tag"
+        git push origin "${tag}"
 
     - name: Generar Github Release
       shell: bash
