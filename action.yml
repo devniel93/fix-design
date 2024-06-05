@@ -49,7 +49,8 @@ runs:
       id: validate_branch
       shell: bash
       if: ${{ steps.validate_last_msg_commit.outputs.is_valid == 'TRUE' }}
-      run: |  
+      run: |
+        echo "in validate_branch"
         # Nombre de la rama principal
         MAIN_BRANCH="${{ steps.variables.outputs.BASE_BRANCH }}"
 
@@ -65,7 +66,7 @@ runs:
           result="TRUE"
         else
           echo "La rama '$CURRENT_BRANCH' no está actualizada con respecto a '$MAIN_BRANCH'. Por favor, haz pull de '$MAIN_BRANCH' antes de hacer push."
-          result="TRUE"
+          result="FALSE"
         fi
         echo $result
         echo "is_valid=$result" >> $GITHUB_OUTPUT
