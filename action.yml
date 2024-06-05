@@ -62,7 +62,7 @@ runs:
         git fetch origin
 
         # Obtener el último commit de master que está en el historial de la rama actual
-        LAST_MASTER_COMMIT_CURR_BRANCH=$(git merge-base HEAD origin/$MAIN_BRANCH)
+        LAST_MASTER_COMMIT_CURR_BRANCH=$(git merge-base HEAD origin/master)
         echo "LAST_MASTER_COMMIT_CURR_BRANCH: $LAST_MASTER_COMMIT_CURR_BRANCH"
         
         # Obtener el hash del último commit en la rama principal
