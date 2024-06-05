@@ -89,7 +89,6 @@ runs:
       shell: bash
       if: ${{ steps.validate_api_type.outputs.is_valid == 'TRUE' }}
       run: |
-        git fetch origin
         # Nombre de la rama principal
         baseBranch=${{ steps.variables.outputs.BASE_BRANCH }}
         # Nombre de la rama a verificar
