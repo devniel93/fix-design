@@ -126,7 +126,7 @@ runs:
     - name: Instalar lib my-openapi-changes
       shell: bash
       id: install_openapi_changes
-      if: ${{ steps.validate_tag_regex.outputs.is_valid != '' }}
+      if: ${{ steps.validate_tag_regex.outputs.is_valid == 'TRUE' }}
       run: |
         curl -fsSL '${{ steps.variables.outputs.LIBRARY_INSTALL_URL }}' | sh
 
@@ -176,7 +176,7 @@ runs:
         only_version=$(echo $latest_tag | cut -d'-' -f1)
         echo "only_version: $only_version"
         
-        new_version=$(echo $current_version | awk -F '[v.]' '{printf "v%d.%d.%d", $2, $3, $4+1}')
+        new_version=$(echo $only_version | awk -F '[v.]' '{printf "v%d.%d.%d", $2, $3, $4+1}')
         echo "new_version: $new_version"
         echo "new_version=$new_version" >> $GITHUB_OUTPUT
     
