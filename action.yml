@@ -27,6 +27,8 @@ runs:
     - name: Descargar repositorio git
       id: checkout_repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Validar ultimo mensaje commit
       shell: bash
