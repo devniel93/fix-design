@@ -94,6 +94,7 @@ runs:
         baseBranch=${{ steps.variables.outputs.BASE_BRANCH }}
         # Nombre de la rama a verificar
         currentBranch=$(git rev-parse --abbrev-ref HEAD)
+        echo "currentBranch: $currentBranch"
         # Fetch los últimos cambios del repositorio remoto
         git fetch origin
         # Obtener el número de commits en la rama principal que no están en la rama de trabajo
