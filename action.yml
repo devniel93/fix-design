@@ -99,6 +99,7 @@ runs:
         git fetch origin
         # Obtener el número de commits en la rama principal que no están en la rama de trabajo
         commits_behind=$(git rev-list --count $currentBranch..origin/$baseBranch)
+        echo "commits_behind: $commits_behind"
         if [ "$commits_behind" -gt 0 ]; then
           echo "La rama $currentBranch está desactualizada por $commits_behind commits en comparación con $baseBranch."
           result="FALSE"
