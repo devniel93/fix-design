@@ -215,7 +215,7 @@ runs:
       run: |
         echo "in generate_pr..."
         gh pr create --title 'Merge testing' --body 'Created by Github action'
-        gh pr merge --merge --auto
+        gh pr merge --merge --auto --admin
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
 
