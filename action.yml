@@ -84,35 +84,10 @@ runs:
         echo $result
         echo "is_valid=$result" >> $GITHUB_OUTPUT
     
-    - name: Validar rama actualizada
-      id: validate_branch
-      shell: bash
-      if: ${{ steps.validate_api_type.outputs.is_valid == 'TRUE' }}
-      run: |
-        # Nombre de la rama principal
-        baseBranch=${{ steps.variables.outputs.BASE_BRANCH }}
-        # Nombre de la rama a verificar
-        currentBranch=$(git rev-parse --abbrev-ref HEAD)
-        echo "currentBranch: $currentBranch"
-        # Fetch los últimos cambios del repositorio remoto
-        git fetch origin
-        # Obtener el número de commits en la rama principal que no están en la rama de trabajo
-        commits_behind=$(git rev-list --count $currentBranch..origin/$baseBranch)
-        echo "commits_behind: $commits_behind"
-        if [ "$commits_behind" -gt 0 ]; then
-          echo "La rama $currentBranch está desactualizada por $commits_behind commits en comparación con $baseBranch."
-          result="FALSE"
-        else
-          echo "La rama $currentBranch está actualizada con $baseBranch."
-          result="TRUE"
-        fi
-        echo $result
-        echo "is_valid=$result" >> $GITHUB_OUTPUT
-    
     - name: Obtener ultimo tag
       id: get_latest_tag
       shell: bash
-      if: ${{ steps.validate_branch.outputs.is_valid == 'TRUE' }}
+      if: ${{ steps.validate_api_type.outputs.is_valid == 'TRUE' }}
       run: |
         # Fetch los últimos tags del repositorio remoto
         git fetch --tags
