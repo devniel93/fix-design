@@ -60,10 +60,15 @@ runs:
         # Actualizar la información del repositorio remoto
         git fetch origin
 
-        # Comprobar si la rama actual está al día con la rama principal
-        if git merge-base --is-ancestor origin/$MAIN_BRANCH $CURRENT_BRANCH; then
-          echo "La rama '$CURRENT_BRANCH' está actualizada con respecto a '$MAIN_BRANCH'."
-          result="TRUE"
+        # Obtener el último commit de master que está en el historial de la rama actual
+        LAST_MASTER_COMMIT_CURR_BRANCH=$(git merge-base HEAD origin/$MAIN_BRANCH)
+        
+        # Obtener el hash del último commit en la rama principal
+        LAST_MASTER_COMMIT=$(git rev-parse origin/$MAIN_BRANCH)
+
+        if [[ $LAST_MASTER_COMMIT_CURR_BRANCH == $LAST_MASTER_COMMIT ]]; then
+            echo "La rama '$CURRENT_BRANCH' está actualizada con respecto a '$MAIN_BRANCH'."
+            result="TRUE"
         else
           echo "La rama '$CURRENT_BRANCH' no está actualizada con respecto a '$MAIN_BRANCH'. Por favor, haz pull de '$MAIN_BRANCH' antes de hacer push."
           result="FALSE"
