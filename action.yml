@@ -21,7 +21,7 @@ runs:
         echo "OPENAPI_CHANGES_PROPERTIES=path,title,servers,x-bcp-api-id,x-bcp-api-type" >> ${GITHUB_OUTPUT}
         echo "RELEASE_API_TYPES=channel" >> ${GITHUB_OUTPUT}
         echo "SNAPSHOT_API_TYPES=channel,business,core,dt" >> ${GITHUB_OUTPUT}
-        echo "TAG_REGEX=^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(SNAPSHOT))?$" >> ${GITHUB_OUTPUT}
+        echo "TAG_REGEX=^v([0-9]+)\.([0-9]+)\.([0-9]+)(-SNAPSHOT)?$" >> ${GITHUB_OUTPUT}
         echo "VALID_API_TYPES=channel,business,core,dt" >> ${GITHUB_OUTPUT}
       
     - name: Descargar repositorio git
