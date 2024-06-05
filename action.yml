@@ -108,7 +108,7 @@ runs:
       if: ${{ steps.get_latest_tag.outputs.latest_tag != '' }}
       run: |
         # Regex para validar el tag
-        regex="${{ steps.variables.outputs.TAG_REGEX }}"
+        regex=${{ steps.variables.outputs.TAG_REGEX }}
 
         # Tag a validar
         tag="${{ steps.get_latest_tag.outputs.latest_tag }}"
