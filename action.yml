@@ -215,14 +215,14 @@ runs:
       run: |
         echo "in generate_pr..."
         gh pr create --title 'Merge testing' --body 'Created by Github action'
-        gh pr merge --merge --auto
+        gh pr merge --merge2 --auto
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
 
     - name: Generar nombres para los TAGs
       shell: bash
       id: get_tag_name
-      if: ${{ steps.get_new_version.outputs.new_version != null }}
+      if: ${{ steps.generate_pr.outcome == 'success' }}
       run: |
         echo "in get_tag_name..."
         apiType=${{ steps.get_api_type.outputs.api_type }}
