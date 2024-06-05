@@ -84,30 +84,73 @@ runs:
         echo $result
         echo "is_valid=$result" >> $GITHUB_OUTPUT
     
-    - name: Obtener ultimo tag
-      id: get_latest_tag
+    - name: Validar rama actualizada
+      id: validate_branch
       shell: bash
       if: ${{ steps.validate_api_type.outputs.is_valid == 'TRUE' }}
       run: |
-        git ls-remote --tags $remote_url | grep refs/tags | while read -r hash ref; do
-          echo "$ref"
-          version=$(echo "$ref" | sed -E 's#refs/tags/(v[0-9]+\.[0-9]+\.[0-9]+)(-SNAPSHOT)?(\^\{\})?#\1#')
-          echo "$version"
-          echo "tag=$version" >> $GITHUB_OUTPUT
-        done | sort -r | head -n 1
+        git fetch origin
+        # Nombre de la rama principal
+        baseBranch=${{ steps.variables.outputs.BASE_BRANCH }}
+        # Nombre de la rama a verificar
+        currentBranch=$(git rev-parse --abbrev-ref HEAD)
+        # Fetch los últimos cambios del repositorio remoto
+        git fetch origin
+        # Obtener el número de commits en la rama principal que no están en la rama de trabajo
+        commits_behind=$(git rev-list --count $currentBranch..origin/$baseBranch)
+        if [ "$commits_behind" -gt 0 ]; then
+          echo "La rama $currentBranch está desactualizada por $commits_behind commits en comparación con $baseBranch."
+          result="FALSE"
+        else
+          echo "La rama $currentBranch está actualizada con $baseBranch."
+          result="TRUE"
+        fi
+        echo $result
+        echo "is_valid=$result" >> $GITHUB_OUTPUT
+    
+    - name: Obtener ultimo tag
+      id: get_latest_tag
+      shell: bash
+      if: ${{ steps.validate_branch.outputs.is_valid == 'TRUE' }}
+      run: |
+        # Fetch los últimos tags del repositorio remoto
+        git fetch --tags
 
-    - name: Validar tag
-      uses: actions-ecosystem/action-regex-match@v2
-      id: regex_match
-      if: ${{ steps.get_latest_tag.outputs.tag != '' }}
-      with:
-        text: ${{ steps.get_latest_tag.outputs.tag }}
-        regex: '${{ steps.variables.outputs.TAG_REGEX }}'
+        # Obtener el último tag
+        latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+
+        if [ -n "$latest_tag" ]; then
+          echo "El último tag es: $latest_tag"
+          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+        else
+          echo "No se encontraron tags en el repositorio."
+        fi
+
+    - name: Validar tag con regex
+      id: validate_tag_regex
+      shell: bash
+      if: ${{ steps.get_latest_tag.outputs.latest_tag != '' }}
+      run: |
+        # Regex para validar el tag
+        regex="${{ steps.variables.outputs.TAG_REGEX }}"
+
+        # Tag a validar
+        tag="${{ steps.get_latest_tag.outputs.latest_tag }}"
+
+        if [[ $tag =~ $regex ]]; then
+          echo "El tag '$tag' es válido."
+          result="TRUE"
+        else
+          echo "El tag '$tag' no es válido."
+          result="FALSE"
+        fi
+        echo $result
+        echo "is_valid=$result" >> $GITHUB_OUTPUT
 
     - name: Instalar lib my-openapi-changes
       shell: bash
       id: install_openapi_changes
-      if: ${{ steps.regex_match.outputs.match != '' }}
+      if: ${{ steps.validate_tag_regex.outputs.is_valid != '' }}
       run: |
         curl -fsSL '${{ steps.variables.outputs.LIBRARY_INSTALL_URL }}' | sh
 
@@ -147,25 +190,20 @@ runs:
           echo "is_fix: $result"
         fi
 
-    - name: Obtener solo la version del TAG
+    - name: Obtener nueva version de TAG
       shell: bash
-      id: get_only_version
+      id: get_new_version
       if: ${{ steps.validate_is_fix.outputs.is_fix == 'TRUE' }}
       run: |
-        echo "in get_only_version..."
-        latest_tag=${{ steps.get_latest_tag.outputs.tag }}
+        latest_tag=${{ steps.get_latest_tag.outputs.latest_tag }}
+        echo "latest_tag: $latest_tag"
         only_version=$(echo $latest_tag | cut -d'-' -f1)
         echo "only_version: $only_version"
-        echo "only_version=$only_version" >> $GITHUB_OUTPUT
+        
+        new_version=$(echo $current_version | awk -F '[v.]' '{printf "v%d.%d.%d", $2, $3, $4+1}')
+        echo "new_version: $new_version"
+        echo "new_version=$new_version" >> $GITHUB_OUTPUT
     
-    - name: Generar nueva version
-      uses: actions-ecosystem/action-bump-semver@v1
-      id: get_new_version
-      if: ${{ steps.get_only_version.outputs.only_version != null }}
-      with:
-        current_version: ${{ steps.get_only_version.outputs.only_version }}
-        level: 'patch'
-
     - name: Actualizar version en OpenAPI
       shell: bash
       id: update_version
